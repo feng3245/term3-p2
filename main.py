@@ -105,7 +105,6 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     for epoch in range(epochs):
         for image, label in get_batches_fn(batch_size):
             _, loss = sess.run([train_op, cross_entropy_loss], feed_dict={input_image: image, correct_label: label, keep_prob: 0.3, learning_rate: 0.0015})
-            print("Loss: = {:.3f}".format(loss))
 tests.test_train_nn(train_nn)
 
 
@@ -120,12 +119,12 @@ def run():
 
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
-
     # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
     # You'll need a GPU with at least 10 teraFLOPS to train on.
     #  https://www.cityscapes-dataset.com/
+    graph = tf.get_default_graph()
 
-    with tf.Session() as sess:
+    with tf.Session(graph=graph) as sess:
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
         # Create function to get batches
@@ -140,8 +139,11 @@ def run():
         layer_output = layers(layer3_out, layer4_out, layer7_out, num_classes)
         logits, train_op, cross_entropy_loss = optimize(layer_output, correct_labels, learning_rate, num_classes)
         # TODO: Train NN using the train_nn function
+        saver = tf.train.Saver()
+
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image, correct_labels, keep_prob, learning_rate)
         # TODO: Save inference data using helper.save_inference_samples
+        saver.save(sess, "./ToBeFrozen.ckpt")
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
 
         # OPTIONAL: Apply the trained model to a video
